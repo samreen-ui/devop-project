@@ -1,0 +1,161 @@
+1)
+ec2 -> .ppk
+-> putty -> ubuntu@ip
+-> ssh -> auth -> cred
+connect -> whoami
+----
+ec2 -> .pem
+-> puttygen -> allfiles -> select .pem
+-> save private key
+then 
+putty -> connect using that .pem file
+Whoami
+---
+using cloudshell
+in actoion -> add .pem file
+----
+rdp
+ec2 -> window -> amazon ami
+-> edit security grp (add rdp port 3389)
+launch
+go to rdp client -> get psd -> username also copy
+
+in pc
+mstsc search
+enter: ip address
+connect
+use username , psd
+------
+
+2)
+ec2 ins ->
+ebs vol
+attach vol to ec2
+check by lsblk
+change the vol config , ize , type etc
+and verify
+
+-----
+lsblk
+lsblk -fs
+sudo fdisk /dev/nvme1n1
+
+n
+p
+Enter
+Enter
+Enter
+w
+
+sudo partprobe
+lsblk -fs
+
+sudo mkfs.xfs /dev/nvme1n1p1
+sudo mkdir /mnt/archana
+sudo mount /dev/nvme1n1p1 /mnt/archana
+df -h
+
+sudo blkid /dev/nvme1n1p1
+sudo nano /etc/fstab	
+Add:
+UUID=f1e294e6-7657-4761-bba5-bb2d0eab3936 /mnt/archana xfs defaults,nofail 0 0
+sudo mount -a
+cd /mnt/archana
+touch f1
+
+sudo reboot
+df -h
+-----
+Create Snapshot - from volume 
+Actions → Copy Snapshot
+in diff reg:
+Actions → Create Volume from Snapshot
+Select new volume -> attach to ec2
+lsblk
+sudo mkdir /mnt/recovery
+sudo mount /dev/nvme1n1p1 /mnt/recovery
+
+ls /mnt/recovery
+--------
+
+
+3) efs
+create
+
+sg - inbound allow ssh and nfs
+create 2 ec2 instance in diff subnet 1a and 1b and select this sg 
+create a file system , in network setting select our sg
+
+open 2 poershell ->
+sudo su
+mkdir efs
+yum install -y amazon-efs-utils
+ls 
+
+go to file sys -> attach -=> copy nfs client cmd
+paste in both powershell
+
+cd efs
+touch e1.txt in ec2 1
+similary e2.txt in ec2 2
+verify sync
+
+---------
+4)
+create s3 -> upload -> acl read for public allow
+versioning
+static website hosting->error , index file -> acl prop config
+-> under prop -> static website hosting allow -> config
+
+---------
+
+5)
+vpc->10.0.0.0/16
+subnet -> private : 10.0.1.0/24
+public : 10.0.2.0/24
+
+igw->
+attach vpc
+
+rt:
+public-rt:
+select vpc -> add route 0.0.0.0/0 -> igw
+associate with public subnet
+
+private-rt:
+select-vpc -> associate with private subnet 
+
+enable auto assign ip in publixc subnet
+
+create security grp:
+http , ssh inbound
+
+launch 2 ec2 instance with same sg
+
+ssh into public -> ping 
+ssh into private via pubilic -> ping (no net)
+
+6)
+
+create vpc
+private , public subnet
+2 sg:
+bastion-sg :
+allow ssh 
+
+db-server-sg:
+allow ssh from bastion-sg
+allow sql/aurora from public subnet(10.0.1.0/24)
+
+2ec2 instance create
+create nat gateway:
+in private rt :
+add Destination	
+0.0.0.0/0
+Target
+NAT Gateway
+
+scp -i bastion.pem dbserver.pem ubuntu@<BASTION_PUBLIC_IP>:/home/ubuntu/
+ssh -i bastion.pem ubuntu@<BASTION_PUBLIC_IP>
+ssh -i dbserver.pem ubuntu@10.0.2.x
+

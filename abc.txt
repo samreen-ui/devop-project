@@ -1,0 +1,128 @@
+7:
+s3 -> dyanamo db
+lambda ->trigger -> s3
+import boto3
+from uuid import uuid4
+def lambda_handler(event, context):
+    s3 = boto3.client("s3")
+    dynamodb = boto3.resource('dynamodb')
+   # Check if the 'Records' key is present in the event
+    if 'Records' in event:
+        # Iterate over each record in the event
+        for record in event['Records']:
+            bucket_name = record['s3']['bucket']['name']
+            object_key = record['s3']['object']['key']
+            size = record['s3']['object'].get('size', -1)
+            event_name = record.get('eventName', 'Unknown')  # Use get() method to handle missing keys
+            event_time = record.get('eventTime', 'Unknown')  # Use get() method to handle missing keys      
+            dynamoTable = dynamodb.Table('newtable')
+            dynamoTable.put_item(
+                Item={'unique': str(uuid4()), 'Bucket': bucket_name, 'Object': object_key,'Size': size, 'Event': event_name, 'EventTime': event_time})
+    else:
+        # Log a message indicating that the 'Records' key is missing from the event
+        print("No 'Records' key found in the event.")
+
+-----------
+8:
+a)sns+email
+email subscription -> publih msg
+
+b)s3 +sns
+
+sns access policy change:
+in codition add :
+"ArnLike": {
+          "AWS:SourceArn":"arn:aws:s3:::prac-7-buck" 
+        },
+--
+
+s3 add event notification 
+destination -> sns 
+
+
+c) sqs:
+create sqs -> send demo msg 
+
+d) 
+create sns , sqs , s3
+-> subscribe sns with sqs
+
+
+
+->add policy to sns
+in condtion:
+ "ArnLike": {
+          "AWS:SourceArn": "arn:aws:sqs:us-east-1:322788437746:week-8-queue-main"
+        }
+then after  atetment code:
+{
+      "Sid": "AllowS3Publish",
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "s3.amazonaws.com"
+      },
+      "Action": "SNS:Publish",
+      "Resource": "arn:aws:sns:us-east-1:322788437746:week-8-topic-main",
+      "Condition": {
+        "StringEquals": {
+          "aws:SourceAccount": "322788437746"
+        },
+        "ArnLike": {
+          "aws:SourceArn": "arn:aws:s3:::week-8-sns-exp"
+        }
+      }
+    }
+-> add policy to sqs (usually unchanged)
+
+->create event notification in s3
+select dest as sns
+
+->verify upload in sqs
+-> crate lambda func , add sqs trigger
+code:
+def lambda_handler(event, context):
+    for record in event['Records']:
+        print("Message received from SQS:")
+        print(record['body'])
+    return {
+        'statusCode': 200,
+        'body': 'Message processed successfully'
+    }
+
+
+--------------
+9:
+ 
+launch 2 ec2 instance , :
+sudo yum update -y
+sudo yum install httpd -y
+sudo systemctl start httpd
+sudo systemctl enable httpd
+sudo bash -c 'echo "This is Server 1" > /var/www/html/index.html'
+--
+sudo yum update -y
+sudo yum install httpd -y
+sudo systemctl start httpd
+sudo systemctl enable httpd
+sudo bash -c 'echo "This is Server 2" > /var/www/html/index.html'
+
+1) create sg for elb:
+allow http 80
+
+2) create elb -> internet facing , select default vpc of ec2
+all subnet , and sg select
+create target grp :type-instance , select ec2 instances 
+
+3)opne dns of elb in broser
+
+autoscaling:
+create image of one ec2 inst -> 
+launch template -> slct sg same
+crate auto scaing grp:
+use launch temp -> default vpc (same as all)
+all az , attach elb
+capacity 2 , 1 , 4
+verify 2->4
+terminate one instance and check
+
+---------

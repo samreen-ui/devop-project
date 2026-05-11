@@ -1,0 +1,46 @@
+intent:
+utterances 
+slot:
+age (add condition)
+city
+checkin date (retry response)
+night
+
+create slot type:
+create slot roomtype->choose slot
+then slot prompt-> card grp -> button
+
+initial ,and last response
+
+---------
+
+iam user create
+provide access check
+give custom psd
+attach policy directly
+choose s3 full access 
+download csv
+login via iam role of ur useru
+check ec2 and s3
+b)
+user->sec cred >create access key
+cli select -> download csv
+use aws cli:
+aws configure
+(key , pwd from csv , then ap-south-1 , json)
+aws ec2 describe-instances
+aws s3 ls
+aws s3 mb s3://iam-user-demo-cli
+
+-----
+create role
+choose service -> ec2->
+s3 full access
+
+create ec2 instance:
+aws ec2 describe-instances
+
+go to ec2 int -> attach role
+do same cmd:
+aws ec2 describe-instances
+aws s3 ls
