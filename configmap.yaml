@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: user-service-config
+  namespace: user-service
+data:
+  # Spring profile — overridden per environment in overlays
+  SPRING_PROFILES_ACTIVE: "staging"
+
+  # App config
+  SERVER_PORT: "8080"
+  LOG_LEVEL: "INFO"
+
+  # DB connection (host/port only — credentials come from Secret)
+  DB_HOST: "postgres-svc.data.svc.cluster.local"
+  DB_PORT: "5432"
+  DB_NAME: "userdb"
+
+  # Feature flags
+  FEATURE_NEW_ONBOARDING: "false"
+  RATE_LIMIT_RPM: "1000"
